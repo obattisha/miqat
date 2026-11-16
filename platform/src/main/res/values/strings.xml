@@ -1,0 +1,5 @@
+<resources>
+    <string name="channel_prayer">Prayer time</string>
+    <string name="channel_reminder">Reminder before prayer</string>
+    <string name="channel_status">Location updates</string>
+</resources>

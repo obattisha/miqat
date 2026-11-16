@@ -1,0 +1,5 @@
+<!-- Dhuhr: midday. Full sun with rays. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#FFFFFFFF" android:pathData="M12,7a5,5 0,1 1,0 10a5,5 0,1 1,0 -10z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M11.25,1h1.5v3.5h-1.5zM11.25,19.5h1.5v3.5h-1.5zM1,11.25h3.5v1.5h-3.5zM19.5,11.25h3.5v1.5h-3.5zM4.2,5.26l1.06,-1.06l2.48,2.48l-1.06,1.06zM16.26,17.32l1.06,-1.06l2.48,2.48l-1.06,1.06zM4.2,18.74l2.48,-2.48l1.06,1.06l-2.48,2.48zM16.26,6.68l2.48,-2.48l1.06,1.06l-2.48,2.48z" />
+</vector>

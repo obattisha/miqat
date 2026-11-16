@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Current prayer: a soft gold-tinted pill on the emerald. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#33E8CF7A" />
+    <corners android:radius="100dp" />
+</shape>

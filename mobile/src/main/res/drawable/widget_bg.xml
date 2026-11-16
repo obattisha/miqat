@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Brand gradient: the icon's emerald, deepening toward the corner. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient android:angle="315" android:startColor="#FF1B7A62" android:centerColor="#FF0F4C3A" android:endColor="#FF0B3B2E" android:type="linear" />
+    <corners android:radius="24dp" />
+</shape>
