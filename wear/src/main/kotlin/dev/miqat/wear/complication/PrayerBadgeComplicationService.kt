@@ -37,7 +37,8 @@ import java.time.ZoneId
  * face (text complications leave layout to the face, and faces stack title/value inconsistently).
  * In the last hour the time becomes minutes left ("42m").
  *
- * Only the current prayer window is sent; the boundary alarm at each prayer requests a refresh.
+ * The timeline covers the current window minute by minute and the next two windows as plain
+ * times, so it stays right even if the refresh at a prayer (the boundary alarm) arrives late.
  */
 class PrayerBadgeComplicationService : SuspendingTimelineComplicationDataSourceService() {
 
@@ -50,27 +51,34 @@ class PrayerBadgeComplicationService : SuspendingTimelineComplicationDataSourceS
         val location = state.location ?: return ComplicationDataTimeline(NoDataComplicationData(), emptyList())
         val now = Instant.now()
         val zone = ZoneId.systemDefault()
-        val (prev, next) = Schedule.window(location, state.params, now, zone)
+        val windows = Schedule.events(location, state.params, now, days = 2, zone = zone)
+            .filter { it.prayer.isPrayer }
+            .zipWithNext()
+            .filter { (_, next) -> next.time > now }
 
         val entries = mutableListOf<TimelineEntry>()
-        val countdownFrom = maxOf(prev.time, next.time.minus(COUNTDOWN_WINDOW))
-        if (countdownFrom > now) {
-            entries += TimelineEntry(TimeInterval(prev.time, countdownFrom), clock(next))
+        windows.take(WINDOWS).forEachIndexed { w, (prev, next) ->
+            if (w > 0) {
+                // Later windows are a fallback in case the refresh at the prayer is late: the
+                // prayer's clock time for the whole window (still correct, just no countdown).
+                entries += TimelineEntry(TimeInterval(prev.time, next.time), clock(next))
+                return@forEachIndexed
+            }
+            val countdownFrom = maxOf(prev.time, next.time.minus(COUNTDOWN_WINDOW))
+            if (countdownFrom > now) entries += TimelineEntry(TimeInterval(prev.time, countdownFrom), clock(next))
+            // One image per minute for the last hour. Minute k covers (k-1, k] minutes left and
+            // shows "k m", rounding up like the app does, so the two always agree.
+            val minutes = Duration.between(countdownFrom, next.time).toMinutes().toInt()
+            for (k in minutes downTo 1) {
+                val end = next.time.minus(Duration.ofMinutes(k - 1L))
+                if (end <= now) continue
+                val start = maxOf(next.time.minus(Duration.ofMinutes(k.toLong())), prev.time)
+                entries += TimelineEntry(TimeInterval(start, end), countdown(next, k))
+            }
         }
-        // The countdown steps every 5 minutes, then every minute for the last 10 (each step is an
-        // image, and the whole timeline has to fit in one binder transaction). Each step shows
-        // its upper bound, so "15m" means 15 or fewer minutes left.
-        val total = Duration.between(countdownFrom, next.time).toMinutes().toInt()
-        val steps = ((60 downTo 15 step 5) + (10 downTo 1)).filter { it <= total }
-        steps.forEachIndexed { i, k ->
-            val lower = steps.getOrNull(i + 1) ?: 0
-            val start = maxOf(next.time.minus(Duration.ofMinutes(k.toLong())), prev.time)
-            val end = next.time.minus(Duration.ofMinutes(lower.toLong()))
-            if (end > now) entries += TimelineEntry(TimeInterval(start, end), countdown(next, k))
-        }
-        // Default (and fallback if the refresh at the prayer is late): the current state.
+        val (_, next) = windows.first()
         val left = Duration.between(now, next.time)
-        val default = if (left <= COUNTDOWN_WINDOW) countdown(next, (left.toMinutes() + 1).toInt()) else clock(next)
+        val default = if (left <= COUNTDOWN_WINDOW) countdown(next, ((left.seconds + 59) / 60).toInt()) else clock(next)
         return ComplicationDataTimeline(default, entries)
     }
 
@@ -134,7 +142,8 @@ class PrayerBadgeComplicationService : SuspendingTimelineComplicationDataSourceS
     )
 
     companion object {
-        private const val SIZE = 120
+        private const val SIZE = 112
+        private const val WINDOWS = 3
         private val COUNTDOWN_WINDOW: Duration = Duration.ofHours(1)
     }
 }
